@@ -25,7 +25,11 @@ def thining(filename):
     threshold = 200
     # Correct Color-scheme
     def threshold_function(x): return 255 if x > threshold else 0
+    # ========
     im = Image.open(filename).convert("L").point(threshold_function, mode='1')
+    im = im.crop((50,50,60,60))
+    # ========
+
 
     on, off = 0, 255
     border = 1
@@ -125,7 +129,11 @@ if __name__ == "__main__":
     def threshold_function(x): return 255 if x > threshold else 0
     im = Image.open(filename).convert("L").point(threshold_function, mode='1')
     # Image.Image.get
-    # im.show()
+    # print (im.getbbox().inv)
+    im = ImageOps.invert(im)
+    print(im.getbbox())
+    # im = im.crop((50,50,60,60))
+    im.show()
     pr.enable()
     # import time
     #
