@@ -1,10 +1,11 @@
 from PIL import Image, ImageOps
-# import itertools
+import numpy as np
 
 
 import cProfile
 import pstats
-on, off = 0, 255
+on, off = 1, 0
+# on, off = 0, 255
 
 
 def colorPixelLocations(px, color=0, listOfPixels=None, bound=None):
@@ -22,18 +23,19 @@ def colorPixelLocations(px, color=0, listOfPixels=None, bound=None):
 
 
 def thining(filename):
+    # on is color of graph and off is color of background
+    on, off = 1,0
+    # Threshold for making image binary (as every pixel is between 0 and 255)
     threshold = 200
-    # Correct Color-scheme
-    def threshold_function(x): return 255 if x > threshold else 0
-    # ========
+    # 1 is part of graph and 0 is background (on monitor, displayed as black background with a with graph and text)
+    # Inverts image white-black
+    def threshold_function(x):
+        return off if x > threshold else on
     im = Image.open(filename).convert("L").point(threshold_function, mode='1')
-    im = im.crop((50,50,60,60))
-    # ========
-
-
-    on, off = 0, 255
-    border = 1
-    im = ImageOps.expand(im, border=border, fill=off)
+    # Crop with bounding box crops largest possible black border around image
+    im = im.crop(im.getbbox())
+    # adds a 1 pixel wide border around image to prevent algorithm from trying to access pixels outside
+    im = ImageOps.expand(im, border=1, fill=off)
     width, height = im.size
     px = im.load()
 
@@ -42,8 +44,7 @@ def thining(filename):
     directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
     # ((1,1),(width-1,height-1))
-    image_changeing_bounds = (
-        (border, border), (width - border, height - border))
+    image_changeing_bounds = ((1, 1), (width - 1, height - 1))
     blackpixel_coordinates_within_bound = colorPixelLocations(
         px, color=0, bound=image_changeing_bounds)
 
@@ -56,7 +57,7 @@ def thining(filename):
         # print("Pass: {}, Black pixels: {}, removed: {}".format(index, len(blackpixel_coordinates_within_bound),svarta-len(blackpixel_coordinates_within_bound)))
         # print(image_changeing_bounds)
 
-        crop_constraint = ((width - border, height - border), (border, border))
+        crop_constraint = ((width - 1, height - 1), (1, 1))
         pixel_deleted = False
         for i, d in enumerate(directions):
             marked_pixels = []
@@ -126,13 +127,12 @@ if __name__ == "__main__":
     filename = "graphs/lars_graph16.png"
     threshold = 200
     # Correct Color-scheme
-    def threshold_function(x): return 255 if x > threshold else 0
+    # 1 is part of graph and 0 is background (on monitor, displayed as black background with a with graph)
+    def threshold_function(x): return 0 if x > threshold else 1
+    # def threshold_function(x): return 255 if x > threshold else 0
     im = Image.open(filename).convert("L").point(threshold_function, mode='1')
-    # Image.Image.get
-    # print (im.getbbox().inv)
-    im = ImageOps.invert(im)
+    im = im.crop(im.getbbox())
     print(im.getbbox())
-    # im = im.crop((50,50,60,60))
     im.show()
     pr.enable()
     # import time
@@ -147,4 +147,4 @@ if __name__ == "__main__":
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     stats.print_stats(10)
     # pr.print_stats(sort=2)
-    # im.show()
+    im.show()
