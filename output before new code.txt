@@ -1,34 +1,53 @@
+         1866104 function calls (1865904 primitive calls) in 4.015 seconds
+
+   Ordered by: cumulative time
+   List reduced from 325 to 10 due to restriction <10>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.322    1.322    4.015    4.015 thining_algorithm.py:28(thining)
+   146258    1.224    0.000    1.557    0.000 thining_algorithm.py:119(is8Simple)
+        5    0.000    0.000    0.746    0.149 thining_algorithm.py:14(colorPixelLocations)
+        1    0.637    0.637    0.637    0.637 thining_algorithm.py:17(<listcomp>)
+866569/866538    0.194    0.000    0.194    0.000 {built-in method builtins.len}
+   600130    0.147    0.000    0.147    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.132    0.132 Image.py:862(convert)
+        1    0.001    0.001    0.112    0.112 ImageFile.py:154(load)
+        4    0.109    0.027    0.109    0.027 thining_algorithm.py:23(<listcomp>)
+        6    0.103    0.017    0.103    0.017 {method 'decode' of 'ImagingDecoder' objects}
+
+
+
+
+
+Code=======================================================================
+
+
+
 from PIL import Image, ImageOps
 import numpy as np
-from math import sin,cos,pi
 
 
 import cProfile
 import pstats
-
-on = 1
-off = (on+1)%2
 # on, off = 0,1
-# on, off = 1,0
+on, off = 1,0
 # on, off = 0, 255
 
-# todo maybe remove
-# Todo använd Numpys np.nonzero istället
 # Returns a list of all pixels with coordinates of given "color", the pixels are collected through listOfPixels and/or bound
 # listOfPixels Contains a list of pixel-coordinates that are checked
 # bound is a bounding box of the image, only pixels inside the box was changed last iteration
-# def colorPixelLocations(px, color=on, listOfPixels=None, bound=None):
-#     if listOfPixels is None and bound is not None:
-#         # When content in bound is unknown
-#         return [(col, row) for col in range(bound[0][0], bound[1][0]) for row in range(bound[0][1], bound[1][1]) if px[(col, row)] == color]
-#     elif listOfPixels is not None and bound is None:
-#         # When black pixels of last pass, across image is known
-#         return [pixel for pixel in listOfPixels if px[pixel] == color]
-#     elif listOfPixels is not None and bound is not None:
-#         # When black pixels of last pass, across image is known and no changes were made outside bound
-#         return [pixel for pixel in listOfPixels if px[pixel] == color and bound[0][0] <= pixel[0] <= bound[1][0] and bound[0][1] <= pixel[1] <= bound[1][1]]
-#     else:
-#         raise AttributeError("listOfPixels and bound can't both be None")
+def colorPixelLocations(px, color=on, listOfPixels=None, bound=None):
+    if listOfPixels is None and bound is not None:
+        # When content in bound is unknown
+        return [(col, row) for col in range(bound[0][0], bound[1][0]) for row in range(bound[0][1], bound[1][1]) if px[(col, row)] == color]
+    elif listOfPixels is not None and bound is None:
+        # When black pixels of last pass, across image is known
+        return [pixel for pixel in listOfPixels if px[pixel] == color]
+    elif listOfPixels is not None and bound is not None:
+        # When black pixels of last pass, across image is known and no changes were made outside bound
+        return [pixel for pixel in listOfPixels if px[pixel] == color and bound[0][0] <= pixel[0] <= bound[1][0] and bound[0][1] <= pixel[1] <= bound[1][1]]
+    else:
+        raise AttributeError("listOfPixels and bound can't both be None")
 
 
 def thining(filename):
@@ -48,70 +67,53 @@ def thining(filename):
 
     array = np.asarray(im)
 
-    # todo maybe remove
     width, height = im.size
 
-    # todo maybe remove
+    #todo remove
     px = im.load()
 
-    # todo maybe remove
+    # todo remove
     # directions = ["N","S","W","E"]
     # coordinate (0,0) is top-left corner
-    # directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+    directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
-    # todo maybe remove
     # bounding box of the image, only pixels inside the box was changed last iteration (at initiation it's 1 pixel inside the edge of the image)
-    # bounding_box_of_changes = ((1, 1), (width - 1, height - 1))
-    bbox = ((1, 1), (width - 1, height - 1))
+    bounding_box_of_changes = ((1, 1), (width - 1, height - 1))
 
     # Returns list of pixels that are ON (on=1 and off=0) within bounding_box_of_changes
-    # nonzero = np.nonzero(array)
-    # ON_pixel_coordinates_within_bound = colorPixelLocations(
-    #     px, color=on, listOfPixels=None, bound=bounding_box_of_changes)
-
+    ON_pixel_coordinates_within_bound = colorPixelLocations(
+        px, color=on, bound=bounding_box_of_changes)
 
     pixel_deleted = True
     index = 0
     while pixel_deleted:
         index += 1
-        # todo maybe remove
-        # ON_pixel_coordinates_within_bound = colorPixelLocations(
-        #     px, color=on, listOfPixels=ON_pixel_coordinates_within_bound, bound=bounding_box_of_changes)
-        # Returns list of pixels that are ON (on=1 and off=0) on format (L_Yvalues, L_Xvalues)
-        nonzero = np.nonzero(array)
-        nonzero_indices = [(x, y) for (y,x) in zip(nonzero[0],nonzero[1])
-                           if bbox[0][0] <= x <= bbox[1][0] and bbox[0][1] <= y <= bbox[1][1]]
+        ON_pixel_coordinates_within_bound = colorPixelLocations(
+            px, color=on, listOfPixels=ON_pixel_coordinates_within_bound, bound=bounding_box_of_changes)
+        # print("Pass: {}, Black pixels: {}, removed: {}".format(index, len(ON_pixel_coordinates_within_bound),svarta-len(ON_pixel_coordinates_within_bound)))
+        # print(bounding_box_of_changes)
 
-
-        # todo maybe remove
         crop_constraint = ((width - 1, height - 1), (1, 1))
         pixel_deleted = False
-
-        # todo mer ineffektivt än listan (directions)?
-        # for i, d in enumerate(directions):
-        for v in range(4):
-            # Results 4 iterations with values  (1, 0), (1, 0), (-1, 0), (0, -1) : E, N, W, S
-            d = (round(cos(v * pi / 2)), round(sin(v * pi / 2)))
-
-            # Pixels to remove
+        for i, d in enumerate(directions):
             marked_pixels = []
 
             # For each pixel i_xy
-            for (x, y) in nonzero_indices:
-                # i_xy = (x, y)
-                # # i_d = (x + directions[i][0], y + directions[i][1])
-                # i_d = (x + d[0], y + d[1])
+            for (col, row) in ON_pixel_coordinates_within_bound:
+                i_xy = (x, y) = (col, row)
+                # todo change directions to d[0] and d[1]
+                i_d = (col + directions[i][0], row + directions[i][1])
 
-                # A) Pixel is off
-                if px[(x, y)] == off:
+                # A) Pixel is white
+                if px[i_xy] == off:
                     continue
-                # B) Pixel is on, but not edge in direction d
-                if px[(x + d[0], y + d[1])] == on:
+                # B) Pixel is black, but not edge in direction
+                if px[i_d] == on:
                     continue
                 # C) Pixel is an endpoint
-                # List of colors of neighbor pixels, start in top-left pixel, goes around clockwise and end in left pixel
-                neighborColors = [px[(x - 1, y - 1)], px[(x, y - 1)], px[(x + 1, y - 1)],
-                                  px[(x + 1, y)], px[(x + 1, y + 1)], px[(x, y + 1)], px[(x - 1, y + 1)], px[(x - 1, y)]]
+                # List of colors of neighbor pixels, start in top-left pixel, end in left pixel
+                neighborColors = [px[(x - 1, y - 1)], px[(x, y - 1)], px[(x + 1, y - 1)], px[(
+                    x + 1, y)], px[(x + 1, y + 1)], px[(x, y + 1)], px[(x - 1, y + 1)], px[(x - 1, y)]]
                 if neighborColors.count(on) <= 1:
                     continue
                 # D) Is not 8-Simple, removing pixel does affect connectivness of neighboring pixels, therefore don't remove pixel
@@ -119,25 +121,23 @@ def thining(filename):
                     continue
 
                 # mark pixel i_xy for deletion
-                marked_pixels.append((x,y))
+                marked_pixels.append(i_xy)
 
-                # todo maybe remove
                 crop_constraint = (
-                    (min(crop_constraint[0][0], x - 1),
-                     min(crop_constraint[0][1], y - 1)),
-                    (max(crop_constraint[1][0], x + 1),
-                     max(crop_constraint[1][1], y + 1))
+                    (min(crop_constraint[0][0], i_xy[0] - 1),
+                     min(crop_constraint[0][1], i_xy[1] - 1)),
+                    (max(crop_constraint[1][0], i_xy[0] + 1),
+                     max(crop_constraint[1][1], i_xy[1] + 1))
                 )
 
                 pixel_deleted = True
+            # print("Marked pixels: {}".format(len(marked_pixels)))
             for i_xy in marked_pixels:
                 px[i_xy] = off
-        # todo maybe remove
-        # bounding_box_of_changes = crop_constraint
-        bbox = crop_constraint
+        bounding_box_of_changes = crop_constraint
 
     # print("bounding_box_of_changes:",bounding_box_of_changes)
-    print("Passes: ", index)
+    # print("Passes: ", index)
     return im
 
 
@@ -177,6 +177,6 @@ if __name__ == "__main__":
 
     pr.disable()
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
-    stats.print_stats(20)
+    stats.print_stats(10)
     # pr.print_stats(sort=2)
-    # im.show()
+    im.show()
