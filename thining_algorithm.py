@@ -58,8 +58,8 @@ def thining(filename):
 
             # Pixels to remove in this sub-pass
             marked_pixels = []
+            # All non-background pixels
             nonzero = np.nonzero(maskArray)
-            # passCount += 1
 
             # For each pixel (y,x)
             for (y, x) in zip(nonzero[0], nonzero[1]):
@@ -124,6 +124,7 @@ def is8Simple(neighborColors):
 if __name__ == "__main__":
     pr = cProfile.Profile()
     filename = "graphs/lars_graph16.png"
+    # filename = "graphs/post_thining1.png"
     # im.show()
     pr.enable()
 
