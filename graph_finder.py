@@ -22,45 +22,61 @@ def findRoot(px,searchspace,rootDirection="W"):
     func = switcher.get(rootDirection, lambda: "Invalid argument")
     return func(searchspace)
 
-def getNeighbors(px,i_xy):
+def getNonMaskedNeighbors(px,i_xy,maskArray):
     (x, y) = i_xy
     neighbors = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1), (x + 1, y), (x + 1, y + 1), (x, y + 1), (x - 1, y + 1), (x - 1, y)]
     # todo remove this comment --------- To see colors of each neighbor use: [(px[i], i) for i in neighbors]
-
+    # b=0
     # todo kan detta effektiviseras?
-    return [pixel for pixel in neighbors if px[pixel] == on]
+    # a=0
+    # A = [(x,y) for (x,y) in neighbors if px[(x,y)] == on]
+    A = [(x,y) for (x,y) in neighbors if px[(x,y)] == on and not ma.is_masked(maskArray[y,x])]
 
-def getNonArcPixels(px,maskArray,root,parent=None):
-    # nonArcPixels = [] #todo fixa detta
-    # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
+    # B = [(xn,yn) for (xn,yn) in neighbors if px[(xn,yn)] == on]
+    # C = [(maskArray[yn, xn], (xn, yn)) for (xn, yn) in neighbors if px[(xn, yn)] == on]
+    # D = [(px[xn,yn],(xn,yn)) for (xn,yn) in neighbors]
+
+    return A
+
+
+def getNonArcPixels(px,nonArcPixels,root,maskArray, varnings=True):
 
     (x,y) = root
-    nonArcPixels = [root]
     # if parent == None: # todo lägg till detta
     #     parent = root
     #todo för nonArcPixels bygg en (Parent,child) lista typ [((1,1),(50,5)), ...]
     while True:
-        # todo kom ihåg att root var svart men blir nu vit
-        px[root] = off
+        # px[root] = off #Todo ta bort detta men se till så den inte går bakåt
         maskArray[y,x] = ma.masked
-        neighbors = getNeighbors(px,root)
+        # Todo Tar just nu neighbors i ordning höger till vänster när nedanför
+        neighbors = getNonMaskedNeighbors(px,root,maskArray)
         # if neighbor is non-arc pixel. An arc-pixel is a pixel between intersections or endpoints
-        if len(neighbors) != 1:
+        nL = len(neighbors)
+        if  nL == 1:
+            # If pixel is an arc-pixel => neighbors only contain 1 element => first element is the only element
+            (x,y) = root = neighbors[0]
+        else:
+            # nL == 0 or nL == 2
             nonArcPixels.append(root) #todo ta bort
             # End Point
-            if len(neighbors) == 0:
+            if nL == 0:
                 return nonArcPixels
-            # elif len(neighbors) in (2,3):
+            # Handles problems with cases too many neighbors
+            elif varnings and nL >= 3: print("Varning, at (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(x,y))
+            # elif nL in (2,3):
             for neighbor in neighbors:
-                nonArcPixels.extend(getNonArcPixels(px,neighbor))
+                (xn,yn) = neighbor
+                if varnings and ma.is_masked(maskArray[yn,xn]):
+                    print("Varning, at (x,y)=({},{}), Cycle appears in the graph, output will be incorrect.".format(xn,yn))
+                nonArcPixels.extend(getNonArcPixels(px,[], neighbor,maskArray))
+
             return nonArcPixels
-            # else: raise Exception("Too many neighbors when the number is {}, something is wrong at pixel {}".format(len(neighbors),root))
-        else:
-            root = neighbors[0]
+        # todo lägga till vid större korsningar:
+        #  else: raise Exception("Too many neighbors when the number is {}, something is wrong at pixel {}".format(nL,root))
 
 
 
-def graph_finder(im,rootDirection = "w",isDendrogram=True):
+def graph_finder(im,rootDirection = "w", varnings=True):
     """
     Main function for graph finding
     :param im:
@@ -78,42 +94,80 @@ def graph_finder(im,rootDirection = "w",isDendrogram=True):
     nonzero = np.nonzero(maskArray)
     nonzero_indices = [(x,y) for (y, x) in zip(nonzero[0], nonzero[1])]
 
-
     #Gets the root and the nodes
     root = findRoot(px,nonzero_indices,rootDirection=rootDirection)
 
-    intersectionsAndLeafs = getNonArcPixels(px,maskArray,root)
+    # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
+    nonArcPixels = [root]
+    # px[3,3] = 0
+    im.show()
+    intersectionsAndLeafs = getNonArcPixels(px,nonArcPixels, root, maskArray, varnings)
     print(intersectionsAndLeafs)
-    
+    print()
+    print("För Y ska det bli:",[(3,1), (3,2), (5,3), (1,3)])
+
     #Prints Black dot at each node (5 pixel square)
+    # print(np.asarray(im))
+    print()
+    im = im.convert("RGB")
+    # px = im.load()
+    # print(np.asarray(im))
+    # print()
+    # px[(1,1)] = 100
+    # print(np.asarray(im))
+    # im.paste(100, box=(0,0,1,1))
+    # print(np.asarray(im))
+    # im.show()
+    # print(np.asarray(im))
+    sNB=1
+    color = "#FF4949" #Red
     for pixel in intersectionsAndLeafs:
-        nodeBox = pixel[0]-2, pixel[1]-2, pixel[0]+2, pixel[1]+2
-        im.paste(on,box=(nodeBox))
+        # nodeBox = pixel[0]-2, pixel[1]-2, pixel[0]+2, pixel[1]+2
+        # im.paste(on,box=(nodeBox))
+        if sNB ==1:
+            nodeBox = pixel[0]-sNB, pixel[1]-sNB, pixel[0]+sNB, pixel[1]+sNB
+        else:
+            nodeBox = pixel[0], pixel[1], pixel[0]+1, pixel[1]+1
+        im.paste(color,box=(nodeBox))
         # box.close()
     #todo Create Newick file or json object
     #todo add alternative to control what is collected (Like above)
 
+    # Must be returned because im.convert("L") creates new variable not avalible in main scope
+    return im
 
+
+threshold = 200
+def threshold_function(x):
+    return off if x < threshold else on
 
 if __name__ == "__main__":
 
-    filename = "graphs/post_thining1.png"
-    # im = t.thining("graphs/lars_graph16.png")
-    # im = t.thining("pre_thining3.png")
-    threshold = 200
-    def threshold_function(x):
-        return off if x < threshold else on
-    im = Image.open(filename).convert("L").point(threshold_function, mode='1')
+    # filename = "graphs/cross_post_thining.png"
+    # filename = "graphs/lars_graph16.png"
+    # filename = "graphs/crossY3.png"
+    filename = "graphs/cross2.png"
+    # filename = "graphs/pre_thining3.png"
+    # filename = "graphs/pre_thining1.png"
+    performeThining = True
+
+
+    if performeThining:
+        im = t.thining(filename)
+    else:
+        im = Image.open(filename).convert("L").point(threshold_function, mode='1')
+
     im.load()
-    # im.show()
     pr = cProfile.Profile()
     pr.enable()
 
-    graph_finder(im,rootDirection = "n", isDendrogram=True)
-
+    im = graph_finder(im,rootDirection = "w", varnings=True)
     pr.disable()
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     stats.print_stats(15)
-    # Image.point(im, lambda x: 0)
 
-    im.show()
+    # im.show()
+    name = filename.split(".")
+    name = name[0] + "_post_graphfinder."+name[1]
+    # print(np.asarray(im))
+    im.save(name, "PNG")
