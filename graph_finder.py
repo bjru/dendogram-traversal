@@ -25,76 +25,44 @@ def findRoot(px,searchspace,rootDirection="W"):
 def getNonMaskedNeighbors(px,i_xy,maskArray):
     (x, y) = i_xy
     neighbors = [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1), (x + 1, y), (x + 1, y + 1), (x, y + 1), (x - 1, y + 1), (x - 1, y)]
-    # todo remove this comment --------- To see colors of each neighbor use: [(px[i], i) for i in neighbors]
-    # b=0
-    # todo kan detta effektiviseras?
-    # a=0
-    # A = [(x,y) for (x,y) in neighbors if px[(x,y)] == on]
     A = [(x,y) for (x,y) in neighbors if px[(x,y)] == on and not ma.is_masked(maskArray[y,x])]
 
-    # B = [(xn,yn) for (xn,yn) in neighbors if px[(xn,yn)] == on]
-    # C = [(maskArray[yn, xn], (xn, yn)) for (xn, yn) in neighbors if px[(xn, yn)] == on]
-    # D = [(px[xn,yn],(xn,yn)) for (xn,yn) in neighbors]
-
     return A
-
+def getAdjacencySet(neighbors, maskArray):
+    n = neighbors
+    nL = len(n)
+    adjacent = set()
+    for i in range(nL - 1):
+        for j in range(i + 1, nL):
+            if math.dist(n[i], n[j]) <= 1.42:
+                adjacent = adjacent.union([n[i], n[j]])
+                maskArray[n[i][1], n[i][0]] = maskArray[n[j][1], n[j][0]] = ma.masked
+    return adjacent
 def joinAdjacentNeighbors(px,root, neighbors, maskArray,varnings=True):
     # 1.42 is an upperbound to math.sqrt(2) and faster to use computationaly
     nL = len(neighbors)
-    if nL == 2 and math.dist(neighbors[0], neighbors[1]) <= 1.42:
-        n1, n2 = neighbors
-        # masked because part of same vertex as root is
-        maskArray[n1[1], n1[0]] = maskArray[n2[1], n2[0]] = ma.masked
-        neighbors = set(getNonMaskedNeighbors(px, n1, maskArray)).union(getNonMaskedNeighbors(px, n2, maskArray))
-        if varnings and len(neighbors) >= 3:
-            print("Varning, at (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(root[0], root[1]))
-    elif nL == 3:
-        n = neighbors
-        # n1, n2, n3 = neighbors
-        # adjacency = [math.dist(n1, n2) <= 1.42, math.dist(n1, n3) <= 1.42, math.dist(n2, n3) <= 1.42]
-        adjacent  = set()
+    n = neighbors
+    adjacent  = set()
 
-        # Adds neighbors with adjacency relation together into the set: adjacent
-        for i in range(nL-1):
-            for j in range(i+1,nL):
-                if math.dist(n[i],n[j]) <= 1.42:
-                    adjacent.union([n[i],n[j]])
-                    maskArray[n[i][1], n[i][0]] = maskArray[n[j][1], n[j][0]] = ma.masked
+    # Adds neighbors with adjacency relation together into the set: adjacent
+    while True:
+        adjacent = getAdjacencySet(neighbors, maskArray)
+        neighbors = set(neighbors).difference(adjacent) # All neighbors, of root, not adjacent to any other neighbor added to set first
+        for p in adjacent:
+            neighbors = neighbors.union(getNonMaskedNeighbors(px, p, maskArray))
+        # check no pixel in neighbors are adjacent
+        adjacent = getAdjacencySet(list(neighbors), maskArray)
+        if len(adjacent) == 0: break
+    # todo if new neighbors are adjacent, join with root (solution to recursion)
+    #     todo add the nested for-loop in a separate function
+    #     then if check if adjcency exist in the set neighbors above, will performe a temporary solution now:
+    for p in neighbors:
+        for q in neighbors:
+            if 0.1< math.dist(p, q) <= 1.42:
+                print("Varning!!! Recursion in joinAdjacentNeighbors() needs to be done")
 
-        neighbors = set(neighbors).difference(adjacent)
-        for e in adjacent:
-            neighbors = neighbors.union(getNonMaskedNeighbors(px, e, maskArray))
-        # if sum(adjacency) == 0:
-        #     # case 1: no neighbor is adjacent => just pass past the if-statement
-        #     pass
-        # if sum(adjacency) == 1:
-        #     # case 2: two neighbors are adjacent, one is not
-        #     adPair = adjacency.index(True)
-        #     if adPair == 0:
-        #         # n1,n2
-        #         maskArray[n1[1], n1[0]] = maskArray[n2[1], n2[0]] = ma.masked
-        #         neighbors = set(getNonMaskedNeighbors(px, n1, maskArray)).union(
-        #             getNonMaskedNeighbors(px, n2, maskArray)).add(n3)
-        #     elif adPair == 1:
-        #         # n1,n3
-        #         maskArray[n1[1], n1[0]] = maskArray[n3[1], n3[0]] = ma.masked
-        #         neighbors = set(getNonMaskedNeighbors(px, n1, maskArray)).union(
-        #             getNonMaskedNeighbors(px, n3, maskArray)).add(n2)
-        #     elif adPair == 2:
-        #         # n2,n3
-        #         maskArray[n2[1], n2[0]] = maskArray[n3[1], n3[0]] = ma.masked
-        #         neighbors = set(getNonMaskedNeighbors(px, n2, maskArray)).union(
-        #             getNonMaskedNeighbors(px, n3, maskArray)).add(n1)
-        # elif sum(adjacency) in [2, 3]:
-        #     # case 3: all three neighbors are adjacent or all are adjacent to one of them
-        #     maskArray[n1[1], n1[0]] = maskArray[n2[1], n2[0]] = maskArray[n3[1], n3[0]] = ma.masked
-        #     neighbors = set(getNonMaskedNeighbors(px, n1, maskArray)).union(
-        #         getNonMaskedNeighbors(px, n2, maskArray)).union(getNonMaskedNeighbors(px, n3, maskArray))
-        #     # todo if new neighbors are adjacent, join with root (solution to recursion)
-
-            # Todo ta bort?
-            if varnings and len(neighbors) >= 3:
-                print("Varning(3.1), at (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(x,y))
+    if varnings and len(neighbors) >= 3:
+        print("Varning(3.1), at (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(root[0],root[1]))
     return neighbors
 
 def getNonArcPixels(px,nonArcPixels,root,maskArray, varnings=True):
@@ -128,7 +96,7 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray, varnings=True):
 
 
 
-def graph_finder(im,rootDirection = "w", varnings=True):
+def graph_finder(im,rootDirection = "n", varnings=True):
     """
     Main function for graph finding
     :param im:
@@ -152,7 +120,7 @@ def graph_finder(im,rootDirection = "w", varnings=True):
     # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
     nonArcPixels = [root]
     # px[3,3] = 0
-    im.show()
+    # im.show()
     intersectionsAndLeafs = getNonArcPixels(px,nonArcPixels, root, maskArray, varnings)
     print(intersectionsAndLeafs)
     print()
@@ -171,20 +139,20 @@ def graph_finder(im,rootDirection = "w", varnings=True):
     # print(np.asarray(im))
     # im.show()
     # print(np.asarray(im))
-    sNB=1
+    # sNB=1
     color = "#FF4949" #Red
     for pixel in intersectionsAndLeafs:
         # nodeBox = pixel[0]-2, pixel[1]-2, pixel[0]+2, pixel[1]+2
         # im.paste(on,box=(nodeBox))
-        if sNB ==1:
-            nodeBox = pixel[0]-sNB, pixel[1]-sNB, pixel[0]+sNB, pixel[1]+sNB
-        else:
-            nodeBox = pixel[0], pixel[1], pixel[0]+1, pixel[1]+1
+        # if sNB ==1:
+        #     nodeBox = pixel[0]-sNB, pixel[1]-sNB, pixel[0]+sNB, pixel[1]+sNB
+        # else:
+        nodeBox = pixel[0], pixel[1], pixel[0]+1, pixel[1]+1
         im.paste(color,box=(nodeBox))
         # box.close()
     #todo Create Newick file or json object
     #todo add alternative to control what is collected (Like above)
-
+    # im.show()
     # Must be returned because im.convert("L") creates new variable not avalible in main scope
     return im
 
@@ -213,7 +181,7 @@ if __name__ == "__main__":
     pr = cProfile.Profile()
     pr.enable()
 
-    im = graph_finder(im,rootDirection = "w", varnings=True)
+    im = graph_finder(im,rootDirection = "n", varnings=True)
     pr.disable()
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     stats.print_stats(15)
