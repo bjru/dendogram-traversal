@@ -46,14 +46,15 @@ from PIL import Image, ImageOps
 # # print(mask)
 
 
-x = np.ones((3,3))
-mx = ma.masked_array(x,mask=np.ones((3,3)))
-print(x)
-print()
-print(mx)
-print()
+# x = np.ones((3,3))
+# mx = ma.masked_array(x,mask=np.ones((3,3)))
+# print(x)
+# print()
+# print(mx)
+# print()
+#
+# # mx[1,1] = 3
+# mx[1,1] = ma.nomask
+# print(x)
+# print(mx)
 
-# mx[1,1] = 3
-mx[1,1] = ma.nomask
-print(x)
-print(mx)
