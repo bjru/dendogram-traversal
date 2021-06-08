@@ -8,10 +8,19 @@ Tree Traversal is based on "Structural Graph Extraction from Images" by Javier G
 
 
 
-Installed packages is Python, Pillow (fork of PIL), Numpy
+Installed packages is Python, Pillow (fork of PIL), Numpy,
+
+Visualization has prequisites:
+ETE3
 
 
-Terminal
-Numpy on Linux:
+
+Install packages on Ubuntu:
+
+Numpy:
 sudo apt install python3-numpy
 
+
+ETE3:
+pip install ete3
+pip install PyQt5; pip install PyQt4;
