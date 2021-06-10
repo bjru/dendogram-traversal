@@ -156,7 +156,15 @@ def graph_finder(im,rootDirection = "n", varnings=True):
     intersectionsAndLeafs, newick = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings)
 
     newick = newick[0:-1] if newick[-1] == "," else newick
-    newick ="(" + newick + "){}_{};".format(root[0],root[1])
+
+    # Solution for if root and first intersection are the same, may happen when root in image occurs on an arc-pixel
+    # instead of a terminal node
+    rootPos="{}_{}".format(root[0],root[1])
+    if newick[-len(rootPos):] != rootPos:
+        newick = "(" + newick + "){};".format(rootPos)
+    else:
+        newick += ";"
+
 
     im = im.convert("RGB")
     color = "#FF4949" #Red
@@ -174,7 +182,8 @@ if __name__ == "__main__":
     # filename = "graphs/crossY3.png"
     # filename = "graphs/cross2.png"
     # filename = "graphs/pre_thining2.png"
-    filename = "graphs/pre_thining1.png"
+    # filename = "graphs/pre_thining1.png"
+    filename = "graphs/test2.png"
     # filename = "graphs/pre_thining7-4neighbors.png"
     # filename = "graphs/pre_thining8-5neighbors.png"
     # filename = "graphs/pre_thining9.png"
@@ -191,7 +200,7 @@ if __name__ == "__main__":
 
     im.load()
 
-    im, newick = graph_finder(im,rootDirection = "s", varnings=True)
+    im, newick = graph_finder(im,rootDirection = "n", varnings=True)
     # pr.disable()
     # stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     # stats.print_stats(4)
@@ -203,4 +212,7 @@ if __name__ == "__main__":
     print("Graph is interpreted in Newick format as:\n",newick)
     if drawTree:
         im.show()
-        graph_generation.treePlotter(newick)
+        graph_generation.treePlotterSimple(newick)
+    # print("Newick", newick)
+
+

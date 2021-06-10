@@ -97,7 +97,7 @@ def thining(filename):
             # Removes marked pixels using a curried function
             list(map(removeMarked(px, maskArray), marked_pixels))
 
-    print("Passes: ", passCount)
+    # print("Passes: ", passCount)
     # masked enries in maskArray are lost. therefore Image.fromarray(maskArray) is not a good method to access neighboring pixel-data
     return im
 
@@ -133,6 +133,7 @@ if __name__ == "__main__":
     # filename = "graphs/lars_graph16.png"
     # filename = "graphs/lars_graph2.png"
     filename = "graphs/crossY3.png"
+    filename = "graphs/test2.png"
     im = Image.open(filename)
     # im.show()
     pr.enable()
