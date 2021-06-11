@@ -1,51 +1,45 @@
 from ete3 import Tree, faces, AttrFace, TreeStyle, NodeStyle
-import cProfile,pstats
 import random
 
-
-def treePlotterNames(newick):
-    # Taken from http://etetoolkit.org/docs/latest/faqs/#how-do-i-visualize-internal-node-names
-    # Used to plot names of internal nodes in ETE3
-    def my_layout(node):
-        if node.is_leaf():
-            # If terminal node, draws its name
-            name_face = AttrFace("name")
-        else:
-            # If internal node, draws label with smaller font size
-            name_face = AttrFace("name", fsize=10)
-        # Adds the name face to the image at the preferred position
-        faces.add_face_to_node(name_face, node, column=0, position="branch-right")
+def treePlotter(newick, internalNodesHasNames=True):
+    """
+    Plots the noewick code as a graph
+    :param newick: newick code representing a graph
+    :param internalNodesHasNames: different functions for True and false
+    :return: None
+    """
     ts = TreeStyle()
     ts.rotation = 90
-    # Do not add leaf names automatically
-    ts.show_leaf_name = False
-    # Use my custom layout
-    ts.layout_fn = my_layout
-    t = Tree(newick, format=8)
-    # Tell ETE to use your custom Tree Style
-    t.show(tree_style=ts)
 
-def treePlotterSimple(newick):
-    # Used when internal nodes names are omitted
-    t = Tree(newick)
-    ts = TreeStyle()
-    ts.show_leaf_name = True
-    ts.rotation = 90
-    nstyle = NodeStyle()
-    nstyle["size"] = 0
-    # nstyle["shape"] = "square"
-    # nstyle["fgcolor"] = "white"
-    for n in t.traverse():
-        n.set_style(nstyle)
+    # If internal nodes have names in the newick format
+    if internalNodesHasNames:
+        t = Tree(newick, format=8)
+        ts.show_leaf_name = False
+        def customLayout(n):
+            if n.is_leaf():name_face = AttrFace("name") #leafs
+            else: name_face = AttrFace("name", fsize=9) #internal node smaller font for text
+            # Adds text to graph
+            faces.add_face_to_node(name_face, n, column=0, position="branch-right")
+        ts.layout_fn = customLayout
+    else:
+        # Used when internal nodes names are omitted
+        t = Tree(newick)
+        ts.show_leaf_name = True
+        nstyle = NodeStyle()
+        nstyle["size"] = 0
+        # nstyle["shape"] = "square"
+        # nstyle["fgcolor"] = "white"
+        for n in t.traverse():
+            n.set_style(nstyle)
     t.show(tree_style=ts)
-
-def treePlot(newick):
-    try:
-        treePlotterNames(newick)
-    except AttributeError:
-        treePlotterSimple(newick)
 
 def generateAllTrees(leaves = 5,keepSmallerTrees=False):
+    """
+    Generates all possible binary graphs, containing x number of leaves, may be slow for larger than 12 leaves
+    :param leaves: The number of leaves, the binary tree should use
+    :param keepSmallerTrees: True if trees of less leaves should be stored
+    :return: List of all trees in newick format
+    """
     # L list will have all trees in the end
     L = {"(L,L)"}
     # Buffer for trees added in the last insert iteration
@@ -66,6 +60,13 @@ def generateAllTrees(leaves = 5,keepSmallerTrees=False):
     return [e+";" for e in L]
 
 def generateXRandomTrees(leaves = 20,trees=10,seed=None):
+    """
+    Generates a random subset of trees of x leaves, much faster than taking all trees
+    :param leaves: number of leaves for the trees
+    :param trees: number of trees to be stored at each iteration
+    :param seed: if != None: seed to use for the random function to generate the same trees each time function is run
+    :return: List of trees with x number of leaves
+    """
     if seed is not None:
         random.seed(seed)
     # Buffer for trees added in the last insert iteration
@@ -87,19 +88,21 @@ def generateXRandomTrees(leaves = 20,trees=10,seed=None):
 
 
 if __name__ == "__main__":
-    leaves = 14
-    pr = cProfile.Profile()
-    pr.enable()
-    T = generateXRandomTrees(leaves=50,trees=10)
-    # T = generateAllTrees(leaves, keepSmallerTrees = False)
-    print(T)
-    print("#Elements: ",len(T))
-    print("First element: ", T[0])
-    print("First element #leaves: ", len([i for i, ltr in enumerate(T[0]) if ltr == "L"]))
+    # leaves = 14
+    # pr = cProfile.Profile()
+    # pr.enable()
+    # T = generateXRandomTrees(leaves=50,trees=10)
+    # # T = generateAllTrees(leaves, keepSmallerTrees = False)
+    # print(T)
+    # print("#Elements: ",len(T))
+    # print("First element: ", T[0])
+    # print("First element #leaves: ", len([i for i, ltr in enumerate(T[0]) if ltr == "L"]))
+    #
+    # pr.disable()
+    # stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
+    # stats.print_stats(10)
 
-    pr.disable()
-    stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
-    stats.print_stats(10)
+    treePlotter("((45_92,(28_182,11_182)18_90)19_4)19_1;", True)
 
 
 
