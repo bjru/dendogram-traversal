@@ -1,6 +1,8 @@
 import thining_algorithm as t
+import warnings
 import cProfile,pstats
 import math
+from math import floor,ceil
 from PIL import Image
 import numpy as np
 import numpy.ma as ma
@@ -82,7 +84,8 @@ def joinAdjacentNeighbors(px,root, neighbors, maskArray,varnings=True):
         if len(adjacent) == 0: break
 
     if varnings and len(neighbors) >= 3:
-        print("Varning(3.1), at (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(root[0],root[1]))
+        warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(root[0],root[1]))
+
     return neighbors
 
 # def getNonArcPixels(px,nonArcPixels,root,maskArray, newick, varnings=True):
@@ -111,6 +114,7 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True)
         newick = ""
         # Order of neighbors based on root direction:
         # For Newick code to adher to same order as viewed in image
+        # Sorting direction of neighbors follows logic below:
         # rootDirection: n -> min(x), s -> max(x), w -> min(y), e -> max(y)
         switcher = {"n": (lambda p: p[0],True), "s": (lambda p: p[0],False), "w": (lambda p: p[1],False), "e": (lambda p: p[1],True)}
         sortDir = switcher.get(rootDirection, lambda: "Invalid argument")
@@ -119,18 +123,23 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True)
         for neighbor in neighbors:
             (xn, yn) = neighbor
             if varnings and ma.is_masked(maskArray[yn, xn]):
-                print("Varning, at (x,y)=({},{}), Cycle appears in the graph, output will be incorrect.".format(xn, yn))
+                warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(xn,yn))
             childNonArc, newickChild = getNonArcPixels(px, [], neighbor, maskArray,rootDirection)
             nonArcPixels.extend(childNonArc)
             newick += newickChild
-        # [0:-1] to remove the last ","-symbol from line 'newick = "{}_{},".format(x,y)'
-        # newick = newick[0:-1] +  "){}_{},".format(root[0],root[1])
-        if newick[-1] != ",": print("warning missing ',' for (x,y)=",root)
-        # newick = newick[0:-1]
+
+        # If part of a cycle and all neighbors of pixel are already masked and used in construction of newick code
+        # (incorrect for the purpose of being a tree but returns error if not dealt with)
+        if len(newick) == 0:
+            warnings.warn("Pixel at (x,y)={}, is not a leaf, it's part of a cycle and all neighbors are already handled.".format(root))
+            newick = "{}_{},".format(x, y)
+        if newick[-1] != ",":
+        # if newick[-1] != ",":
+            warnings.warn("warning missing ',' for (x,y)="+root)
         newick = "(" + newick[0:-1] + "){}_{},".format(root[0], root[1])
         return nonArcPixels, newick
 
-def graph_finder(im,rootDirection = "n", varnings=True):
+def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
     """
     Main function for graph finding
     :param im: image object containng the graph
@@ -153,6 +162,7 @@ def graph_finder(im,rootDirection = "n", varnings=True):
 
     # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
     nonArcPixels = [root]
+    # im.show()
     intersectionsAndLeafs, newick = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings)
 
     newick = newick[0:-1] if newick[-1] == "," else newick
@@ -167,9 +177,10 @@ def graph_finder(im,rootDirection = "n", varnings=True):
 
 
     im = im.convert("RGB")
-    color = "#FF4949" #Red
+    d = abs(nodeDiameter)
+
     for pixel in intersectionsAndLeafs:
-        nodeBox = pixel[0], pixel[1], pixel[0]+1, pixel[1]+1
+        nodeBox = pixel[0]-floor(d/2), pixel[1]-floor(d/2), pixel[0]+ceil(d/2), pixel[1]+ceil(d/2)
         im.paste(color,box=(nodeBox))
     return im, newick
 
@@ -212,7 +223,7 @@ if __name__ == "__main__":
     print("Graph is interpreted in Newick format as:\n",newick)
     if drawTree:
         im.show()
-        graph_generation.treePlotterSimple(newick)
+        graph_generation.treePlotter(newick, internalNodesHasNames=False)
     # print("Newick", newick)
 
 

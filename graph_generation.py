@@ -5,7 +5,7 @@ def treePlotter(newick, internalNodesHasNames=True):
     """
     Plots the noewick code as a graph
     :param newick: newick code representing a graph
-    :param internalNodesHasNames: different functions for True and false
+    :param internalNodesHasNames: True if newick format used has names for internal nodes, False otherwise
     :return: None
     """
     ts = TreeStyle()

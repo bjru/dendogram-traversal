@@ -16,16 +16,16 @@ on,off = 1,0
 eightSimpleSet = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 28, 29, 30, 31, 32, 48, 52, 53, 54, 55, 56, 60, 61, 62, 63, 64, 65, 67, 69, 71, 77, 79, 80, 81, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 97, 99, 101, 103, 109, 111, 112, 113, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126, 127, 128, 129, 131, 133, 135, 141, 143, 149, 151, 157, 159, 181, 183, 189, 191, 192, 193, 195, 197, 199, 205, 207, 208, 209, 211, 212, 213, 214, 215, 216, 217, 219, 220, 221, 222, 223, 224, 225, 227, 229, 231, 237, 239, 240, 241, 243, 244, 245, 246, 247, 248, 249, 251, 252, 253, 254, 255}
 
 
-threshold = 200
-def threshold_function(x):
+
+def threshold_function(threshold):
     """
     # Inverts image white to black
     :param x: a pixel value
     :return: new pixel value
     """
-    return off if x > threshold else on
+    return lambda x: off if x > threshold else on
 
-def thining(filename):
+def thining(filename, threshold = 200,viewBeforeThining=False):
     """
     # Thining algorithm performed on an image with filepath given as an attribute.
     :param filename: filepath as a string to an image
@@ -36,7 +36,12 @@ def thining(filename):
     # Threshold for making image binary (as every pixel is between 0 and 255)
 
     # Makes image binary
-    im = Image.open(filename).convert("L").point(threshold_function, mode='1')
+    im = Image.open(filename).convert("L")
+    if viewBeforeThining:
+        im.show()
+    im = im.point(threshold_function(threshold), mode='1')
+    if viewBeforeThining:
+        im.show()
     # im = Image.open(filename)
     # if invert:
     #     im = ImageChops.invert(im)
@@ -131,14 +136,14 @@ def is8Simple(neighborColors):
 if __name__ == "__main__":
     pr = cProfile.Profile()
     # filename = "graphs/lars_graph16.png"
-    # filename = "graphs/lars_graph2.png"
-    filename = "graphs/crossY3.png"
-    filename = "graphs/test2.png"
+    filename = "graphs/lars_graph2.png"
+    # filename = "graphs/crossY3.png"
+    # filename = "graphs/test2.png"
     im = Image.open(filename)
     # im.show()
     pr.enable()
 
-    im = thining(filename)
+    im = thining(filename,threshold=200)
 
     pr.disable()
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')

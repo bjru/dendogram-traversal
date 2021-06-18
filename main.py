@@ -6,8 +6,12 @@ import timeit
 import re
 
 on,off = 1,0
+def countLeaves(newick):
+    newick = newickStripNames(newick)
+    return newick.count("L")
 
-def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,printResult=False):
+
+def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,printResult=False,threshold=200, nodeDiameter=1):
     """
     Main function for running the algorithm
     :param filename: file to use for finding the graph struckture
@@ -17,28 +21,37 @@ def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,p
     :param printResult: If true, print resulting newick code
     :return: image object and the newick code
     """
-    im = t.thining(filename)
+    im = t.thining(filename,threshold)
     im.load()
 
-    im, newick = gf.graph_finder(im, rootDirection=rootDirection, varnings=True)
+    im, newick = gf.graph_finder(im, rootDirection=rootDirection, varnings=True,nodeDiameter=nodeDiameter)
 
     if save:
         name = filename.split(".")
-        name = name[0] + "_post_graphfinder." + name[1]
+        name = name[0] + "_post_run." + name[1]
         im.save(name, "PNG")
     if printResult:
+        print("There are {} leaves.".format(countLeaves(newick)))
         print("Graph is interpreted in Newick format as:\n", newick)
     if drawAndPlotTree[0]:
         im.show()
     if drawAndPlotTree[1]:
-        gg.treePlot(newick)
+        gg.treePlotter(newick, internalNodesHasNames=True)
 
     return im, newick
+def thinnImage(filename,threshold=200,save=True,viewBeforeThining=False):
+    im = t.thining(filename,threshold=threshold,viewBeforeThining=viewBeforeThining)
+    if save:
+        name = filename.split(".")
+        name = name[0] + "_post_thinning." + name[1]
+        im.save(name, "PNG")
+    return im
+
 def treeFormatTesting(newick):
     """
     Used to clean up newick code for smoother comparison in tests, no leaf names are visible among other things
     :param newick: Newick code
-    :return:
+    :return: Tree and style of tree
     """
     ts = TreeStyle()
     ts.show_leaf_name = False
@@ -63,7 +76,7 @@ def newickStripNames(newick):
     P_leaf = "(\d+_\d+)"
     return re.sub(P_leaf, "L", re.sub(P_internalNodes, ")", newick))
 
-def testAlgorithmPerformance(ListNewick,filename="graphs/test.png"):
+def testAlgorithmPerformance(ListNewick,filename="graphs/test.png",threshold=200):
     """
     Prints information about successrate of algorithm under ideal conditions.
     :param ListNewick: List of trees of Newick format
@@ -84,7 +97,7 @@ def testAlgorithmPerformance(ListNewick,filename="graphs/test.png"):
         # render graph as an image so run() can check the same image
         t.render(file_name=filename, tree_style=ts)
         # Result from algorithm
-        _, newickAlg = run(filename=filename, rootDirection="n", drawAndPlotTree=(False, False), save=False)
+        _, newickAlg = run(filename=filename, rootDirection="n", drawAndPlotTree=(False, False), save=False,threshold=threshold)
         # Strips the newick from the algorithm of coordinates before comparison
         newickAlgClean = newickStripNames(newickAlg)
 
@@ -113,11 +126,18 @@ if __name__ == "__main__":
     # filename = "graphs/pre_thining7-4neighbors.png"
     # filename = "graphs/pre_thining8-5neighbors.png"
     # filename = "graphs/pre_thining9.png"
-    filename = "graphs/test.png"
+    # filename = "graphs/test.png"
+    # filename = "graphs/aProblemThinning2.png"
+    # filename = "graphs/lars_graph12.png"
+    # filename = "graphs/lars_graph12_FIX.png"
+    filename = "graphs/lars_graph10.png"
+    threshold=150
+    rootDirection = "w"
+    nodeDiameter=5
+    # thinnImage(filename,threshold=threshold,save=True, viewBeforeThining=True)
+    im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(True,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
 
-    # im, newick = run(filename=filename, rootDirection="n", drawAndPlotTree=(False,True),save=False)
-    # im, newick = run(filename=filename, rootDirection="n", drawAndPlotTree=(True,True),save=False)
     # gg.plotTree("((45_92,(28_182,11_182)18_90)19_1)19_1;")
 
-    testAlgorithmPerformance(gg.generateAllTrees(10))
-    # testAlgorithmPerformance(gg.generateXRandomTrees(50,10))
+    # testAlgorithmPerformance(gg.generateAllTrees(10),threshold=130)
+    # testAlgorithmPerformance(gg.generateXRandomTrees(50,10),threshold=130)
