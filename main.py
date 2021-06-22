@@ -21,10 +21,10 @@ def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,p
     :param printResult: If true, print resulting newick code
     :return: image object and the newick code
     """
-    im = t.thining(filename,threshold)
+    im, imGray = t.thining(filename,threshold)
     im.load()
 
-    im, newick = gf.graph_finder(im, rootDirection=rootDirection, varnings=True,nodeDiameter=nodeDiameter)
+    im, newick, possibleThresholds = gf.graph_finder(im, imGray,rootDirection=rootDirection, varnings=True,nodeDiameter=nodeDiameter)
 
     if save:
         name = filename.split(".")
@@ -33,14 +33,19 @@ def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,p
     if printResult:
         print("There are {} leaves.".format(countLeaves(newick)))
         print("Graph is interpreted in Newick format as:\n", newick)
+        print()
+        print("If missing parts of graph, try: threshold >{}.\n\n"
+              "Otherwise for improvement, try from:\n{}".format(threshold,sorted(possibleThresholds)))
+
     if drawAndPlotTree[0]:
-        im.show()
+        imGray.show(title="Grayscale, pre-algorithm")
+        im.show(title="Result of algorithm")
     if drawAndPlotTree[1]:
         gg.treePlotter(newick, internalNodesHasNames=True)
 
     return im, newick
 def thinnImage(filename,threshold=200,save=True,viewBeforeThining=False):
-    im = t.thining(filename,threshold=threshold,viewBeforeThining=viewBeforeThining)
+    im,_= t.thining(filename,threshold=threshold,viewBeforeThining=viewBeforeThining)
     if save:
         name = filename.split(".")
         name = name[0] + "_post_thinning." + name[1]
@@ -128,10 +133,8 @@ if __name__ == "__main__":
     # filename = "graphs/pre_thining9.png"
     # filename = "graphs/test.png"
     # filename = "graphs/aProblemThinning2.png"
-    # filename = "graphs/lars_graph12.png"
-    # filename = "graphs/lars_graph12_FIX.png"
-    filename = "graphs/lars_graph10.png"
-    threshold=150
+    filename = "graphs/lars_graph12_FIX.png"
+    threshold=110
     rootDirection = "w"
     nodeDiameter=5
     # thinnImage(filename,threshold=threshold,save=True, viewBeforeThining=True)

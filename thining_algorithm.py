@@ -1,21 +1,19 @@
-from PIL import Image, ImageOps, ImageChops
+from PIL import Image, ImageOps
 import numpy as np
 import numpy.ma as ma
 from math import sin,cos,pi
 
-
-import cProfile
-import pstats
+# import cProfile
+# import pstats
 
 # 1 is part of graph and 0 is background (on monitor, displayed as black background with a white graph and text)
 on,off = 1,0
 
-# Set of all 8-simple pixels where numbers in binary represent different positions of 8-neighboring pixels
+# Set of all 8-simple pixels where numbers in binary represent different positions of 8-neighboring pixels,
+# note that for binary representation, top left neighbor pixel is the left most bit and left neighbor pixel is the right most bit in an 8-bit number
 # ListNot8simp=  {9, 10, 11, 17, 18, 19, 25, 26, 27, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 50, 51, 57, 58, 59, 66, 68, 70, 72, 73, 74, 75, 76, 78, 82, 90, 98, 100, 102, 104, 105, 106, 107, 108, 110, 114, 122, 130, 132, 134, 136, 137, 138, 139, 140, 142, 144, 145, 146, 147, 148, 150, 152, 153, 154, 155, 156, 158, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 182, 184, 185, 186, 187, 188, 190, 194, 196, 198, 200, 201, 202, 203, 204, 206, 210, 218, 226, 228, 230, 232, 233, 234, 235, 236, 238, 242, 250}
 # ListIs8simp=  {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 28, 29, 30, 31, 32, 48, 52, 53, 54, 55, 56, 60, 61, 62, 63, 64, 65, 67, 69, 71, 77, 79, 80, 81, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 97, 99, 101, 103, 109, 111, 112, 113, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126, 127, 128, 129, 131, 133, 135, 141, 143, 149, 151, 157, 159, 181, 183, 189, 191, 192, 193, 195, 197, 199, 205, 207, 208, 209, 211, 212, 213, 214, 215, 216, 217, 219, 220, 221, 222, 223, 224, 225, 227, 229, 231, 237, 239, 240, 241, 243, 244, 245, 246, 247, 248, 249, 251, 252, 253, 254, 255}
 eightSimpleSet = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 15, 16, 20, 21, 22, 23, 24, 28, 29, 30, 31, 32, 48, 52, 53, 54, 55, 56, 60, 61, 62, 63, 64, 65, 67, 69, 71, 77, 79, 80, 81, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 97, 99, 101, 103, 109, 111, 112, 113, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126, 127, 128, 129, 131, 133, 135, 141, 143, 149, 151, 157, 159, 181, 183, 189, 191, 192, 193, 195, 197, 199, 205, 207, 208, 209, 211, 212, 213, 214, 215, 216, 217, 219, 220, 221, 222, 223, 224, 225, 227, 229, 231, 237, 239, 240, 241, 243, 244, 245, 246, 247, 248, 249, 251, 252, 253, 254, 255}
-
-
 
 def threshold_function(threshold):
     """
@@ -32,23 +30,19 @@ def thining(filename, threshold = 200,viewBeforeThining=False):
     :return: an image object
     """
 
-
-    # Threshold for making image binary (as every pixel is between 0 and 255)
-
-    # Makes image binary
+    # Makes image grayscale
     im = Image.open(filename).convert("L")
+
     if viewBeforeThining:
-        im.show()
+        im.show(title="Grayscale, pre-thinning")
+
+    # Makes image binary, threshold is between 0 and 255
     im = im.point(threshold_function(threshold), mode='1')
+
     if viewBeforeThining:
-        im.show()
-    # im = Image.open(filename)
-    # if invert:
-    #     im = ImageChops.invert(im)
-    # im = im.convert("L").point(threshold_function, mode='1')
+        im.show(title="Post-binary and -inverted")
 
     # Crop with bounding box crops largest possible black border around image
-    # im = im.crop(im.getbbox())
     # adds a 1 pixel wide border around image to prevent algorithm from trying to access pixels outside
     im = ImageOps.expand(im, border=1, fill=off)
 
@@ -101,10 +95,7 @@ def thining(filename, threshold = 200,viewBeforeThining=False):
                 pixel_deleted = True
             # Removes marked pixels using a curried function
             list(map(removeMarked(px, maskArray), marked_pixels))
-
-    # print("Passes: ", passCount)
-    # masked enries in maskArray are lost. therefore Image.fromarray(maskArray) is not a good method to access neighboring pixel-data
-    return im
+    return im, Image.open(filename).convert("L")
 
 def removeMarked(px, maskArray):
     """
@@ -139,16 +130,16 @@ if __name__ == "__main__":
     filename = "graphs/lars_graph2.png"
     # filename = "graphs/crossY3.png"
     # filename = "graphs/test2.png"
-    im = Image.open(filename)
-    # im.show()
+    # im = Image.open(filename)
+    # im.show(title="Pre-thinning")
     pr.enable()
 
-    im = thining(filename,threshold=200)
+    im, imGray = thining(filename,threshold=200)
 
     pr.disable()
     stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     stats.print_stats(15)
-    im.show()
+    im.show(title="Testing thinning")
 
     name = filename.split(".")
     name = name[0] + "_post_thining." + name[1]

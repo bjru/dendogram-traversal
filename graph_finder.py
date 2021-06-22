@@ -89,10 +89,21 @@ def joinAdjacentNeighbors(px,root, neighbors, maskArray,varnings=True):
     return neighbors
 
 # def getNonArcPixels(px,nonArcPixels,root,maskArray, newick, varnings=True):
-def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True):
+# def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True):
+def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings, possibleThresholds,grayPx):
     # newick = ""
     (x,y) = root
+    # todo change
+    lastAdded = -1
     while True:
+        # todo change
+        gray = grayPx[x-1,y-1]
+        if lastAdded != gray:
+            # if gray == 255: print("White at:", root)
+            possibleThresholds.add(gray)
+            lastAdded = gray
+
+
         maskArray[y,x] = ma.masked
         neighbors = getNonMaskedNeighbors(px,root,maskArray)
         nL = len(neighbors)
@@ -105,7 +116,9 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True)
         nonArcPixels.append(root)
         if nL == 0:  # End Point
             newick = "{}_{},".format(x,y)
-            return nonArcPixels, newick
+            # todo change
+            # return nonArcPixels, newick
+            return nonArcPixels, newick, possibleThresholds
         elif nL >= 2:  # May be an intersection,
             # nL should be 2<=x<=5
             neighbors = joinAdjacentNeighbors(px,root, neighbors, maskArray)
@@ -124,7 +137,11 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True)
             (xn, yn) = neighbor
             if varnings and ma.is_masked(maskArray[yn, xn]):
                 warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(xn,yn))
-            childNonArc, newickChild = getNonArcPixels(px, [], neighbor, maskArray,rootDirection)
+            # todo change
+            # childNonArc, newickChild = getNonArcPixels(px, [], neighbor, maskArray,rootDirection)
+            childNonArc, newickChild, extraThresh = getNonArcPixels(px, [], neighbor, maskArray,rootDirection,varnings, possibleThresholds,grayPx)
+            possibleThresholds.update(extraThresh)
+            # todo changes END
             nonArcPixels.extend(childNonArc)
             newick += newickChild
 
@@ -137,9 +154,13 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings=True)
         # if newick[-1] != ",":
             warnings.warn("warning missing ',' for (x,y)="+root)
         newick = "(" + newick[0:-1] + "){}_{},".format(root[0], root[1])
-        return nonArcPixels, newick
+        # return nonArcPixels, newick
+        # todo change
+        # return nonArcPixels, newick
+        return nonArcPixels, newick, possibleThresholds
 
-def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
+# def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
+def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
     """
     Main function for graph finding
     :param im: image object containng the graph
@@ -160,10 +181,16 @@ def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "
     #Gets the root and the nodes
     root = findRoot(px,nonzero_indices,rootDirection=rootDirection)
 
+
     # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
     nonArcPixels = [root]
-    # im.show()
-    intersectionsAndLeafs, newick = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings)
+
+    # todo some changes
+    # intersectionsAndLeafs, newick = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings)
+    grayPx = grayImage.load()
+    possibleThresholds = set([grayPx[root[0]-1,root[1]-1]])
+    intersectionsAndLeafs, newick, possibleThresholds = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings, possibleThresholds,grayPx)
+    # todo some changes END
 
     newick = newick[0:-1] if newick[-1] == "," else newick
 
@@ -182,7 +209,9 @@ def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "
     for pixel in intersectionsAndLeafs:
         nodeBox = pixel[0]-floor(d/2), pixel[1]-floor(d/2), pixel[0]+ceil(d/2), pixel[1]+ceil(d/2)
         im.paste(color,box=(nodeBox))
-    return im, newick
+    # todo change
+    # return im, newick
+    return im, newick, possibleThresholds
 
 
 
@@ -194,27 +223,31 @@ if __name__ == "__main__":
     # filename = "graphs/cross2.png"
     # filename = "graphs/pre_thining2.png"
     # filename = "graphs/pre_thining1.png"
-    filename = "graphs/test2.png"
+    # filename = "graphs/test2.png"
     # filename = "graphs/pre_thining7-4neighbors.png"
     # filename = "graphs/pre_thining8-5neighbors.png"
-    # filename = "graphs/pre_thining9.png"
+    filename = "graphs/lars_graph12_FIX.png"
     performeThining = True
-    drawTree = True
+    drawTree = False
+    threshold = 130
 
 
-    # pr = cProfile.Profile()
-    # pr.enable()
+    imGray = Image.open(filename).convert("L")
     if performeThining:
-        im = t.thining(filename)
+        im = t.thining(filename,threshold=threshold, viewBeforeThining=True)
     else:
-        im = Image.open(filename).convert("L").point(lambda x : off if x < 200 else on, mode='1')
-
+        im = imGray.point(lambda x : off if x < threshold else on, mode='1')
     im.load()
 
-    im, newick = graph_finder(im,rootDirection = "n", varnings=True)
-    # pr.disable()
-    # stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
-    # stats.print_stats(4)
+    pr = cProfile.Profile()
+    pr.enable()
+
+    # im, newick = graph_finder(im, rootDirection="w", varnings=True, nodeDiameter=1, color="#FF4949")
+    im, newick,possibleThresholds = graph_finder(im,grayImage=imGray, rootDirection="w", varnings=True, nodeDiameter=1, color="#FF4949")
+
+    pr.disable()
+    stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
+    stats.print_stats(15)
 
     name = filename.split(".")
     name = name[0] + "_post_graphfinder."+name[1]
@@ -222,8 +255,11 @@ if __name__ == "__main__":
     im.save(name, "PNG")
     print("Graph is interpreted in Newick format as:\n",newick)
     if drawTree:
-        im.show()
+        im.show(title="Testing graph_finder")
         graph_generation.treePlotter(newick, internalNodesHasNames=False)
-    # print("Newick", newick)
+
+    # todo change
+    # print("If problems occured with part of graph missing, try a higher threshold.\nIf you need a better threshold, try one of:")
+    print("If problems occured with part of graph missing, try a higher threshold.\nIf you need a better threshold, try one of:",possibleThresholds)
 
 
