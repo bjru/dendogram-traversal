@@ -3,7 +3,7 @@ import warnings
 import cProfile,pstats
 import math
 from math import floor,ceil
-from PIL import Image
+from PIL import Image,ImageOps
 import numpy as np
 import numpy.ma as ma
 
@@ -160,12 +160,17 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings, poss
         return nonArcPixels, newick, possibleThresholds
 
 # def graph_finder(im,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
-def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949"):
+def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1,color = "#FF4949",invertOutput=True):
     """
     Main function for graph finding
     :param im: image object containng the graph
+    :param grayImage: original image object in grayscale, used by possibleThresholds
     :param rootDirection: One of four directions (n, s, w, e, "first" pixel in list) root is choosen as the pixel closest to this direction
     :param varnings: Boolean of whether to display some warnings
+    :param nodeDiameter: size of vertecies in output
+    :param color: color of vertecies in output
+    :param invertOutput: Output will normally have black background and the graph is white, if True colors should be inverted
+
     :return: returns the image object an a string in Newick format
     """
     # Used to access pixel data
@@ -202,8 +207,9 @@ def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1
     else:
         newick += ";"
 
-
     im = im.convert("RGB")
+    if invertOutput:
+        im = ImageOps.invert(im)
     d = abs(nodeDiameter)
 
     for pixel in intersectionsAndLeafs:

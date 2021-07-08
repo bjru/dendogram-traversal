@@ -3,8 +3,8 @@ import numpy as np
 import numpy.ma as ma
 from math import sin,cos,pi
 
-# import cProfile
-# import pstats
+import cProfile
+import pstats
 
 # 1 is part of graph and 0 is background (on monitor, displayed as black background with a white graph and text)
 on,off = 1,0

@@ -21,21 +21,23 @@ def run(filename, rootDirection="n", drawAndPlotTree = (True,True) ,save=False,p
     :param printResult: If true, print resulting newick code
     :return: image object and the newick code
     """
+
+    # im becomes an inverted, binary image
     im, imGray = t.thining(filename,threshold)
     im.load()
 
-    im, newick, possibleThresholds = gf.graph_finder(im, imGray,rootDirection=rootDirection, varnings=True,nodeDiameter=nodeDiameter)
+    im, newick, possibleThresholds = gf.graph_finder(im, imGray,rootDirection=rootDirection, varnings=True,nodeDiameter=nodeDiameter,invertOutput=True)
 
     if save:
         name = filename.split(".")
         name = name[0] + "_post_run." + name[1]
         im.save(name, "PNG")
     if printResult:
+        print("If missing parts of graph, try: threshold >{}.\n"
+              "Otherwise for improvement, try from:\n{}".format(threshold,sorted(possibleThresholds)))
+        print()
         print("There are {} leaves.".format(countLeaves(newick)))
         print("Graph is interpreted in Newick format as:\n", newick)
-        print()
-        print("If missing parts of graph, try: threshold >{}.\n\n"
-              "Otherwise for improvement, try from:\n{}".format(threshold,sorted(possibleThresholds)))
 
     if drawAndPlotTree[0]:
         imGray.show(title="Grayscale, pre-algorithm")
@@ -133,12 +135,14 @@ if __name__ == "__main__":
     # filename = "graphs/pre_thining9.png"
     # filename = "graphs/test.png"
     # filename = "graphs/aProblemThinning2.png"
-    filename = "graphs/lars_graph12_FIX.png"
-    threshold=110
+    # filename = "graphs/lars_graph12_FIX.png"
+    filename = "graphs/lars_graph15.png"
+    threshold=130
     rootDirection = "w"
-    nodeDiameter=5
+    nodeDiameter=10
     # thinnImage(filename,threshold=threshold,save=True, viewBeforeThining=True)
-    im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(True,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
+    # im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(True,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
+    im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(False,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
 
     # gg.plotTree("((45_92,(28_182,11_182)18_90)19_1)19_1;")
 
