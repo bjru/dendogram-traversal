@@ -10,6 +10,7 @@ Tree Traversal is based on "Structural Graph Extraction from Images" by Javier G
 To get started with the code, in main.py use the run function
 
 ======================
+
 Installed packages is Python, Pillow (fork of PIL), Numpy,
 
 Visualization has prequisites:
