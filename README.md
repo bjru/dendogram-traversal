@@ -7,7 +7,10 @@ Tree Traversal is based on "Structural Graph Extraction from Images" by Javier G
 
 ================================
 
-To get started with the code, in main.py use the run function
+To get started with the code, in main.py use the run function.
+This first calls the thinning algorithm in thining_algorithm.py.
+Then calls functions in graph_finder.py
+
 
 ======================
 
