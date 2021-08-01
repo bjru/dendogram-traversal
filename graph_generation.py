@@ -1,5 +1,17 @@
 from ete3 import Tree, faces, AttrFace, TreeStyle, NodeStyle
 import random
+import re
+
+def newickStripInternalNames(newick):
+    """
+    Strips newick code of coordinates
+    :param newick: Newick code of format comparable to: "((45_92,(28_182,11_182)18_90)19_1)19_1;"
+    :return: Same code but with leaf and internal node names replaced or removed
+    """
+    P_internalNodes = "(\)\d+_\d+)"
+    P_leaf = "(\d+_\d+)"
+    # return re.sub(P_internalNodes, ")", newick)
+    return re.sub(P_leaf, "L", re.sub(P_internalNodes, ")", newick))
 
 def treePlotter(newick, internalNodesHasNames=True):
     """
@@ -23,6 +35,10 @@ def treePlotter(newick, internalNodesHasNames=True):
         ts.layout_fn = customLayout
     else:
         # Used when internal nodes names are omitted
+
+        # Safety when given newick with names
+        newick = newickStripInternalNames(newick)
+
         t = Tree(newick)
         ts.show_leaf_name = True
         nstyle = NodeStyle()
@@ -56,7 +72,9 @@ def generateAllTrees(leaves = 5,keepSmallerTrees=False):
             L.update(lastAddedToL)
         lastAddedToL = tempBuffer
     L.update(lastAddedToL)
-    L = L.difference({"L", "(L,L)"})
+    L = L.difference({"L"})
+    if not keepSmallerTrees and leaves!=2:
+        L = L.difference({"(L,L)"})
     return [e+";" for e in L]
 
 def generateXRandomTrees(leaves = 20,trees=10,seed=None):
@@ -84,7 +102,9 @@ def generateXRandomTrees(leaves = 20,trees=10,seed=None):
             lastAddedTrees = set([e for i,e in enumerate(tempBuffer) if i in keepThese])
         else:
             lastAddedTrees = tempBuffer
-    return [e+";" for e in lastAddedTrees.difference({"(L,L)"})]
+    if leaves != 2:
+        lastAddedTrees = lastAddedTrees.difference({"(L,L)"})
+    return [e+";" for e in lastAddedTrees]
 
 
 if __name__ == "__main__":
@@ -102,7 +122,8 @@ if __name__ == "__main__":
     # stats = pstats.Stats(pr).strip_dirs().sort_stats('cumtime')
     # stats.print_stats(10)
 
-    treePlotter("((45_92,(28_182,11_182)18_90)19_4)19_1;", True)
+    treePlotter("((((62_188,45_188)52_126,28_128)39_66,11_68)24_6)24_2;", False)
+
 
 
 

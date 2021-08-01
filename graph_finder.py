@@ -84,7 +84,8 @@ def joinAdjacentNeighbors(px,root, neighbors, maskArray,varnings=True):
         if len(adjacent) == 0: break
 
     if varnings and len(neighbors) >= 3:
-        warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(root[0],root[1]))
+        # -1 on coordinates as a one pixel border is added during the thining
+        warnings.warn("At (x,y)=({},{}), 4 or more edges neighboring an intersection, output will be incorrect.".format(root[0]-1,root[1]-1))
 
     return neighbors
 
@@ -115,7 +116,8 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings, poss
 
         nonArcPixels.append(root)
         if nL == 0:  # End Point
-            newick = "{}_{},".format(x,y)
+            # -1 on coordinates as a one pixel border is added during the thining
+            newick = "{}_{},".format(x-1,y-1)
             # todo change
             # return nonArcPixels, newick
             return nonArcPixels, newick, possibleThresholds
@@ -136,7 +138,8 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings, poss
         for neighbor in neighbors:
             (xn, yn) = neighbor
             if varnings and ma.is_masked(maskArray[yn, xn]):
-                warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(xn,yn))
+                # -1 on coordinates as a one pixel border is added during the thining
+                warnings.warn("At (x,y)=({},{}), 4 edges neighboring a vertex, output will be incorrect.".format(xn-1,yn-1))
             # todo change
             # childNonArc, newickChild = getNonArcPixels(px, [], neighbor, maskArray,rootDirection)
             childNonArc, newickChild, extraThresh = getNonArcPixels(px, [], neighbor, maskArray,rootDirection,varnings, possibleThresholds,grayPx)
@@ -148,12 +151,13 @@ def getNonArcPixels(px,nonArcPixels,root,maskArray,rootDirection, varnings, poss
         # If part of a cycle and all neighbors of pixel are already masked and used in construction of newick code
         # (incorrect for the purpose of being a tree but returns error if not dealt with)
         if len(newick) == 0:
-            warnings.warn("Pixel at (x,y)={}, is not a leaf, it's part of a cycle and all neighbors are already handled.".format(root))
-            newick = "{}_{},".format(x, y)
+            # -1 on coordinates as a one pixel border is added during the thining
+            warnings.warn("Pixel at (x,y)=({},{}), is not a leaf, it's part of a cycle and all neighbors are already handled.".format(root[0]-1, root[1]-1))
+            newick = "{}_{},".format(x-1, y-1)
         if newick[-1] != ",":
-        # if newick[-1] != ",":
             warnings.warn("warning missing ',' for (x,y)="+root)
-        newick = "(" + newick[0:-1] + "){}_{},".format(root[0], root[1])
+        # -1 on coordinates as a one pixel border is added during the thining
+        newick = "(" + newick[0:-1] + "){}_{},".format(root[0]-1, root[1]-1)
         # return nonArcPixels, newick
         # todo change
         # return nonArcPixels, newick
@@ -190,18 +194,18 @@ def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1
     # root, when starting, will look like an arcpixel as it only has 1 neighbor therefore, we need to added it in list
     nonArcPixels = [root]
 
-    # todo some changes
-    # intersectionsAndLeafs, newick = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings)
+    # grayPx and possibleThreshold are both used to find alternative threshold of the image
     grayPx = grayImage.load()
     possibleThresholds = set([grayPx[root[0]-1,root[1]-1]])
+    # Finds all intersections and leaves
     intersectionsAndLeafs, newick, possibleThresholds = getNonArcPixels(px,nonArcPixels, root, maskArray, rootDirection, varnings, possibleThresholds,grayPx)
-    # todo some changes END
+
 
     newick = newick[0:-1] if newick[-1] == "," else newick
 
     # Solution for if root and first intersection are the same, may happen when root in image occurs on an arc-pixel
     # instead of a terminal node
-    rootPos="{}_{}".format(root[0],root[1])
+    rootPos="{}_{}".format(root[0]-1,root[1]-1)
     if newick[-len(rootPos):] != rootPos:
         newick = "(" + newick + "){};".format(rootPos)
     else:
@@ -215,8 +219,6 @@ def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1
     for pixel in intersectionsAndLeafs:
         nodeBox = pixel[0]-floor(d/2), pixel[1]-floor(d/2), pixel[0]+ceil(d/2), pixel[1]+ceil(d/2)
         im.paste(color,box=(nodeBox))
-    # todo change
-    # return im, newick
     return im, newick, possibleThresholds
 
 
