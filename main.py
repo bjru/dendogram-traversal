@@ -155,17 +155,17 @@ if __name__ == "__main__":
     # filename = "graphs/pre_thining1.png"
     # filename = "graphs/pre_thining7-4neighbors.png"
     # filename = "graphs/pre_thining8-5neighbors.png"
-    # filename = "graphs/pre_thining9.png"
+    #filename = "graphs/pre_thining9.png"
     # filename = "graphs/test.png"
     # filename = "graphs/aProblemThinning2.png"
     # filename = "graphs/lars_graph12_FIX.png"
-    filename = "graphs/lars_graph15.png"
+    filename = "graphs/lars_graph13.png"
     threshold = 130
     rootDirection = "w"
     nodeDiameter = 10
     # thinnImage(filename,threshold=threshold,save=True, viewBeforeThining=True)
     # im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(True,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
-    # im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(False,False),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
+    im, newick = run(filename=filename, rootDirection=rootDirection, drawAndPlotTree=(True,True),save=True,printResult=True,threshold=threshold,nodeDiameter=nodeDiameter)
 
     # gg.plotTree("((45_92,(28_182,11_182)18_90)19_1)19_1;")
 
@@ -175,18 +175,18 @@ if __name__ == "__main__":
     # print("L\ttime\tTrees\t\ttotal trees")
     # tot = 1
     # for L in range(2,15):
-    for L in range(10,16):
-        startTime = timeit.default_timer()
-        treeSet = gg.generateAllTrees(L)
-        # treeSet = gg.generateXRandomTrees(L,200)
-        timeTakenTreeSet = timeit.default_timer()-startTime
-        # testAlgorithmPerformance(treeSet, threshold=130)
-        print("Leaves;\tTrees;\tTimeTaken;\tTimePerTree;\ttimeTakenTreeSet;\tTimePerTree(Set);\ttimeTakenAlgorithm;\tTimePerTree(Alg)")
-        timeTaken = timeit.default_timer()-startTime
-        timeTakenAlgorithm = timeTaken-timeTakenTreeSet
-        trees = len(treeSet)
-        print("{:.0f};\t{:.0f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};".format(L, trees,timeTaken,timeTaken/trees,
-                                                                                       timeTakenTreeSet,timeTakenTreeSet/trees,
-                                                                                       timeTakenAlgorithm,timeTakenAlgorithm/trees))
-        print("="*20)
+    #for L in range(10,16):
+    #    startTime = timeit.default_timer()
+    #    treeSet = gg.generateAllTrees(L)
+    #    # treeSet = gg.generateXRandomTrees(L,200)
+    #    timeTakenTreeSet = timeit.default_timer()-startTime
+    #    # testAlgorithmPerformance(treeSet, threshold=130)
+    #    print("Leaves;\tTrees;\tTimeTaken;\tTimePerTree;\ttimeTakenTreeSet;\tTimePerTree(Set);\ttimeTakenAlgorithm;\tTimePerTree(Alg)")
+    #    timeTaken = timeit.default_timer()-startTime
+    #    timeTakenAlgorithm = timeTaken-timeTakenTreeSet
+    #    trees = len(treeSet)
+    #    print("{:.0f};\t{:.0f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};\t{:.3f};".format(L, trees,timeTaken,timeTaken/trees,
+    #                                                                                   timeTakenTreeSet,timeTakenTreeSet/trees,
+    #                                                                                   timeTakenAlgorithm,timeTakenAlgorithm/trees))
+    #    print("="*20)
 # treeSet

@@ -173,7 +173,7 @@ def graph_finder(im,grayImage,rootDirection = "n", varnings=True, nodeDiameter=1
     :param varnings: Boolean of whether to display some warnings
     :param nodeDiameter: size of vertecies in output
     :param color: color of vertecies in output
-    :param invertOutput: Output will normally have black background and the graph is white, if True colors should be inverted
+    :param invertOutput: Output will normally have black background and the graph is white, if True colors should be inverted (only black and white colors inverted)
 
     :return: returns the image object an a string in Newick format
     """

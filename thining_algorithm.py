@@ -23,7 +23,7 @@ def threshold_function(threshold):
     """
     return lambda x: off if x > threshold else on
 
-def thining(filename, threshold = 200,viewBeforeThining=False):
+def thining(filename, threshold = 130,viewBeforeThining=False):
     """
     # Thining algorithm performed on an image with filepath given as an attribute.
     :param filename: filepath as a string to an image
@@ -127,7 +127,7 @@ def is8Simple(neighborColors):
 if __name__ == "__main__":
     pr = cProfile.Profile()
     # filename = "graphs/lars_graph16.png"
-    filename = "graphs/lars_graph2.png"
+    filename = "graphs/pre_thining9.png"
     # filename = "graphs/crossY3.png"
     # filename = "graphs/test2.png"
     # im = Image.open(filename)
